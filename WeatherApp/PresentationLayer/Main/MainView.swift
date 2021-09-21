@@ -63,10 +63,44 @@ class MainView: UIView {
         return formatter
     }()
     
+    private let snow: SnowView = {
+        let snow = SnowView()
+        snow.translatesAutoresizingMaskIntoConstraints = false
+        snow.particleImage = UIImage(named: "SnowFlake")
+        return snow
+    }()
+    
+    private let rain: RainView = {
+        let rain = RainView()
+        rain.translatesAutoresizingMaskIntoConstraints = false
+        rain.particleImage = UIImage(named: "RainFlake")
+        return rain
+    }()
+    
+    private let searchTextField: UITextField = {
+        let textField = UITextField()
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.returnKeyType = .search
+        textField.textColor = .white
+        textField.attributedPlaceholder = NSAttributedString(
+            string: "Search town...",
+            attributes: [NSAttributedString.Key.foregroundColor: UIColor(displayP3Red: 0.8, green: 0.8, blue: 0.8, alpha: 1)]
+        )
+        textField.textAlignment = .center
+        textField.font = UIFont.systemFont(ofSize: 28, weight: .heavy)
+        return textField
+    }()
+    
     // MARK: - Life cycle
     
-    init() {
+    init(viewController: ViewController) {
         super.init(frame: .zero)
+        searchTextField.delegate = viewController
+        
+        //tap doesn't work in some cases
+//        let backgroundTap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
+//        addGestureRecognizer(backgroundTap)
+        
         setConstraints()
     }
     
@@ -88,9 +122,30 @@ class MainView: UIView {
         temperatureLabel.text = String(weather.main.temp) + "°C"
         
         descriptionLabel.text = weather.weather[0].description
+
+        updateAnimation(weatherType: weather.weatherType)
     }
     
     // MARK: - Private methods
+    
+    private func updateAnimation(weatherType: WeatherType) {
+        switch weatherType {
+        case .snowy:
+            rain.removeFromSuperview()
+            addSubviewWithConstraints(snow)
+            sendSubviewToBack(snow)
+        case .rainy:
+            snow.removeFromSuperview()
+            addSubviewWithConstraints(rain)
+            sendSubviewToBack(rain)
+        default:
+            break
+        }
+    }
+    
+//    @objc private func didTapBackground() {
+//        endEditing(true)
+//    }
     
     private func setConstraints() {
         addSubview(cityLabel)
@@ -98,8 +153,15 @@ class MainView: UIView {
         addSubview(iconImage)
         addSubview(temperatureLabel)
         addSubview(descriptionLabel)
+        addSubview(searchTextField)
         
         NSLayoutConstraint.activate([
+            //searchTextField
+            searchTextField.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 12),
+            searchTextField.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            searchTextField.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            searchTextField.heightAnchor.constraint(equalToConstant: 44),
+            
             //cityLabel
             cityLabel.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 80),
             cityLabel.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 16),

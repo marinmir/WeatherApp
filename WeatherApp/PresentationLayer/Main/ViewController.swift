@@ -11,11 +11,17 @@ import CoreLocation
 
 class ViewController: UIViewController {
     
+    // MARK: - Public properties
+    
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
+    
     // MARK: - Private properties
     
     private let networkManager: NetworkManager
     private let locationManager = CLLocationManager()
-    private lazy var _view = MainView()
+    private lazy var _view = MainView(viewController: self)
     
     // MARK: - Life cycle
     
@@ -32,15 +38,11 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
-        //locationManager.requestAlwaysAuthorization()
         locationManager.requestWhenInUseAuthorization()
         if CLLocationManager.locationServicesEnabled() {
             locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-            locationManager.startUpdatingLocation()
+            locationManager.requestLocation()
         }
-        
-        //loadWeather(city: "Москва")
     }
     
     override func loadView() {
@@ -51,9 +53,6 @@ class ViewController: UIViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
     }
-
-    // MARK: - Public methods
-    
     
     // MARK: - Private methods
     
@@ -64,9 +63,7 @@ class ViewController: UIViewController {
     }
     
     private func loadWeather(lat: String, lon: String) {
-        networkManager.fetchCurrentLocationWeather(lat: lat, lon: lon) { [weak self] weather in
-            self?.updateViewWithWeather(weather: weather)
-        }
+        networkManager.fetchCurrentLocationWeather(lat: lat, lon: lon, completion: updateViewWithWeather)
     }
     
     private func updateViewWithWeather(weather: WeatherModel) {
@@ -89,5 +86,21 @@ extension ViewController: CLLocationManagerDelegate {
         
         loadWeather(lat: String(locValue.latitude), lon: String(locValue.longitude))
     }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error.localizedDescription)
+    }
 }
 
+// MARK: - UITextFieldDelegate
+
+extension ViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        guard let text = textField.text else {
+            return true
+        }
+        networkManager.fetchCurrentWeather(city: text, completion: updateViewWithWeather)
+        textField.text = ""
+        return true
+    }
+}

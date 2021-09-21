@@ -12,7 +12,9 @@ struct WeatherModel: Codable {
     let main: Main
     let name: String
     let dt: Int
-    lazy var weatherType = WeatherType(description: weather[0].description)
+    var weatherType: WeatherType {
+        return WeatherType(description: weather[0].description)
+    }
 }
 
 struct Weather: Codable {
